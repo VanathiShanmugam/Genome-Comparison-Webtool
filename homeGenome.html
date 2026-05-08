@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenomeXplore</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+  <style>
+    body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background-color: #000;
+            color: #fff;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #000;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 10;
+        }
+        .logo h3 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+        nav ul li {
+            margin: 0 20px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: 1.5px;
+            transition: color 0.3s;
+        }
+        nav ul li a:hover {
+            color: #0073AA;
+        }
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        #hero-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        .hero h1 {
+            font-size: 60px;
+            margin: 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .hero p {
+            font-size: 22px;
+            margin-top: 20px;
+            letter-spacing: 1.2px;
+            max-width: 700px;
+        }
+        section {
+            padding: 100px 80px;
+            text-align: center;
+            background-color: #111;
+        }
+        section h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        section p {
+            font-size: 18px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .biotech-features {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .feature-box {
+            width: 300px;
+            background-color: #1a1a1a;
+            padding: 30px;
+            margin: 20px;
+            border-radius: 10px;
+            transition: transform 0.5s;
+            box-shadow: 0 0 20px rgba(0, 115, 170, 0.5);
+            cursor: pointer;
+        }
+        .feature-box:hover {
+            transform: scale(1.05);
+        }
+        .feature-box h3 {
+            color: #f4b400;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .callout {
+            background-color: #00557F;
+            padding: 60px;
+            color: white;
+            text-align: center;
+        }
+        footer {
+            background-color: #000;
+            color: #fff;
+            padding: 40px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        form input, form textarea {
+            width: 80%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        form button {
+            background-color: #0073AA;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        form button:hover {
+            background-color: #00557F;
+        }
+        .team-section {
+            padding: 60px 10px;
+            background-color: #111;
+        }
+        .team-section h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 1200px;
+            max-height: 106px;
+            margin: 0 auto;
+        }
+        .team-member {
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            height: 200px;
+            padding: 10px;
+            text-align: center;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: start;
+        }
+        .team-member:hover {
+            transform: translateY(-8px);
+        }
+        .team-member img {
+            border-radius: 50%;
+            width: 65px;
+            height: 65px;
+            object-fit: cover;
+            margin-top: 10px;
+        }
+        .team-member h3 {
+            font-size: 0.9em;
+            margin: 8px 0 4px;
+            color: #EAEAEA;
+        }
+        .team-member p {
+            font-size: 0.7em;
+            color: #B0B0B3;
+            margin: 0;
+            line-height: 1.1;
+        }
+        @media (max-width: 1000px) {
+            .team-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        #preloader {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 9999;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #0073AA;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #preloader-text {
+            font-size: 18px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .modal-content {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            color: #fff;
+            position: relative;
+        }
+        .modal h2 {
+            margin-bottom: 20px;
+        }
+        .modal ul {
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.6;
+            padding-left: 20px;
+        }
+        .modal button {
+    padding: 10px 16px;
+    margin: 10px 6px 0;
+    border: none;
+    background-color: #0073AA;
+    color: white;
+    font-weight: 600;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    height: 42px;
+    display: inline-block;
+    vertical-align: middle;
+    min-width: 110px;
+  }
+
+  .modal button:hover {
+    background-color: #005f8e;
+  }
+
+  .modal button i {
+    display: none; 
+  }
+  </style>
+</head>
+<body>
+<div id="preloader">
+    <div class="spinner"></div>
+    <div id="preloader-text">Loading 0%</div>
+</div>
+
+<header data-aos="fade-down">
+    <div class="logo">
+        <h3>GenomeXplore</h3>
+    </div>
+    <nav>
+        <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#tools">Tools</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="hero" id="home" data-aos="fade-up">
+    <video autoplay loop muted id="hero-video">
+        <source src="C:\xampp\htdocs\DNA Hologram. After Effects! (1).mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <h1>GenomeXplore</h1>
+    <p>"Your DNA is not just a sequence; it's a story waiting to be told."</p>
+</div>
+
+<section id="tools" data-aos="fade-up">
+    <h2>Our Tool Portals</h2>
+    <div class="biotech-features">
+        <div class="feature-box" data-aos="flip-left" onclick="window.open('file:///C:/xampp/htdocs/Genome%20Comparison%20Tool.html', '_blank')">
+            <h3>Upload & Compare</h3>
+            <p>Upload genome files and compare them using advanced algorithms.</p>
+        </div>
+        <div class="feature-box" data-aos="flip-right" onclick="window.open('file:///C:/xampp/htdocs/detailed%20insights.html', '_blank')">
+            <h3>Detailed Insights</h3>
+            <p>Generate comprehensive genomic reports for deeper understanding.</p>
+        </div>
+        <div class="feature-box" data-aos="flip-left" onclick="window.open('file:///C:/xampp/htdocs/Visual%20Analysis%20-%20Genome%20Comparison%20Tool.html', '_blank')">
+            <h3>Visual Analysis</h3>
+            <p>View interactive visualizations of your genomic data.</p>
+        </div>
+        <div class="feature-box" data-aos="flip-right" onclick="window.open('file:///C:/xampp/htdocs/translation%20tool.html', '_blank')">
+            <h3>DNA to Protein</h3>
+            <p>Translate sequences with exon-only and six-frame options.</p>
+        </div>
+    </div>
+</section>
+
+<section class="callout" id="about" data-aos="fade-right">
+    <h2>About Us</h2>
+    <p><i>GenomeXplore</i> is your gateway to simplified, visual, and accessible genome exploration. Designed for students and researchers, it turns complex bioinformatics into intuitive tools, right in your browser.</p>
+</section>
+
+<section class="team-section" id="our-team">
+  <h2>Tool Shortcut Tips</h2>
+  <div class="team-grid">
+    <div class="team-member" onclick="showModal()">
+      <img src="C:\xampp\htdocs\CompGenomics.jpg" alt="CompGenomics">
+      <h3>Genome Comparison</h3>
+    </div>
+    <div class="team-member" onclick="showDetailedInsightsModal()">
+      <img src="C:\xampp\htdocs\codon wheel.jpg">
+      <h3>Detailed Insights</h3>
+    </div>
+    <div class="team-member" onclick="showVisualInsightsModal()">
+      <img src="C:\xampp\htdocs\Datavis.png">
+      <h3>Visual Insights</h3>
+    </div>
+    <div class="team-member" onclick="showDnaToProteinModal()">
+      <img src="C:\xampp\htdocs\ribosome_02.jpg" alt="DNA to Protein">
+      <h3>DNA to Protein</h3>
+    </div>
+  </div>
+</section>
+
+<section id="contact" data-aos="fade-up">
+    <h2>Contact Us</h2>
+    <form id="contactForm">
+        <input type="text" id="name" name="name" placeholder="Your Name" required>
+        <input type="email" id="email" name="email" placeholder="Your Email" required>
+        <textarea id="message" name="message" placeholder="Your Message" rows="4" required></textarea>
+        <button type="submit">Send Message</button>
+        <div id="form-response"></div>
+    </form>
+</section>
+
+<footer>
+    <p>© 2024 GenomeXplore. All Rights Reserved.</p>
+</footer>
+
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init();
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const message = document.getElementById('message').value;
+        if (name && email && message) {
+            document.getElementById('form-response').innerHTML = `<p>Thank you, ${name}! We have received your message and will get back to you soon.</p>`;
+            document.getElementById('contactForm').reset();
+        } else {
+            document.getElementById('form-response').innerHTML = `<p>Please fill out all fields.</p>`;
+        }
+    });
+
+    window.addEventListener('load', function() {
+        let percent = 0;
+        const preloaderText = document.getElementById('preloader-text');
+        const preloader = document.getElementById('preloader');
+        const interval = setInterval(() => {
+            percent++;
+            preloaderText.textContent = `Loading ${percent}%`;
+            if (percent >= 100) {
+                clearInterval(interval);
+                preloader.style.transition = 'opacity 0.5s ease';
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }, 500);
+            }
+        }, 20);
+    });
+
+    function showModal() {
+      document.getElementById('shortcutModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('shortcutModal').style.display = 'none';
+    }
+
+    function showDetailedInsightsModal() {
+      document.getElementById('detailedInsightsModal').style.display = 'flex';
+    }
+    
+    function closeDetailedInsightsModal() {
+      document.getElementById('detailedInsightsModal').style.display = 'none';
+    }
+    
+    function showVisualInsightsModal() {
+      document.getElementById('visualInsightsModal').style.display = 'flex';
+    }
+    
+    function closeVisualInsightsModal() {
+      document.getElementById('visualInsightsModal').style.display = 'none';
+    }
+    
+    function showDnaToProteinModal() {
+      document.getElementById('dnaToProteinModal').style.display = 'flex';
+    }
+    
+    function closeDnaToProteinModal() {
+      document.getElementById('dnaToProteinModal').style.display = 'none';
+    }
+</script>
+
+<!-- Genome Comparison Shortcut Modal -->
+<div id="shortcutModal" class="modal">
+  <div class="modal-content">
+    <h2>🔑 Keyboard Shortcuts – Genome Comparison Tool</h2>
+    <ul>
+      <li><strong>alt + shift + L</strong> – Load Sequences</li>
+      <li><strong>alt + shift + M</strong> – Compare Sequences</li>
+      <li><strong>alt + shift + S</strong> – Speak Report</li>
+      <li><strong>alt + shift + D</strong> – Download Report</li>
+      <li><strong>alt + shift + Q</strong> – Download Alignment</li>
+      <li><strong>alt + shift + H</strong> – Toggle High Contrast</li>
+      <li><strong>alt + shift + Z</strong> – Reset Font Size</li>
+      <li><strong>alt + shift + (+)</strong> – Increase Font Size</li>
+      <li><strong>alt + shift + (-)</strong> – Decrease Font Size</li>
+      <li><strong>alt + shift + 1</strong> – Select File 1</li>
+      <li><strong>alt + shift + 2</strong> – Select File 2</li>
+      <li><strong>alt + shift + S</strong> – Speak Shortcuts</li>
+      <li><strong>alt + shift + X</strong> – Stop Speech</li>
+      <li><strong>Esc</strong> – Close Shortcut Modal</li>
+    </ul>
+    <button onclick="speakShortcuts('shortcutModal')">🔊 Speak Shortcuts</button>
+    <button onclick="stopSpeech()">⏹️ Stop</button>
+    <button onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- Detailed Insights Shortcut Modal -->
+<div id="detailedInsightsModal" class="modal">
+  <div class="modal-content">
+    <h2>🔑 Keyboard Shortcuts – Detailed Insights Tool</h2>
+    <ul>
+      <li><strong>alt + shift + U</strong> – Upload file</li>
+      <li><strong>alt + shift + L</strong> – Load file</li>
+      <li><strong>alt + shift + C</strong> – Clear sequence</li>
+      <li><strong>alt + shift + G</strong> – Generate insights</li>
+      <li><strong>alt + shift + M</strong> – Find motif</li>
+      <li><strong>alt + shift + S</strong> – Speak motif results</li>
+      <li><strong>alt + shift + D</strong> – Download motif results</li>
+      <li><strong>alt + shift + R</strong> – Generate reverse complement</li>
+      <li><strong>alt + shift + B</strong> – Download reverse complement</li>
+      <li><strong>alt + shift + A</strong> – Calculate codon usage</li>
+      <li><strong>alt + shift + T</strong> – Speak codon usage</li>
+      <li><strong>alt + shift + O</strong> – Download codon usage</li>
+      <li><strong>alt + shift + Q</strong> – Speak GC/AT content</li>
+      <li><strong>alt + shift + W</strong> – Stop GC/AT speech</li>
+      <li><strong>alt + shift + E</strong> – Download GC/AT chart</li>
+      <li><strong>alt + shift + H</strong> – Toggle high contrast</li>
+      <li><strong>alt + shift + (+) / (−)</strong> – Increase / Decrease font size</li>
+      <li><strong>alt + shift + Z</strong> – Reset font size</li>
+      <li><strong>alt + shift + S</strong> – Speak Shortcuts</li>
+               <li><strong>alt + shift + X</strong> – Stop Speech</li>
+               <li><strong>Esc</strong> – Close Shortcut Modal</li>
+    </ul>
+    <button onclick="speakShortcuts('detailedInsightsModal')">🔊 Speak Shortcuts</button>
+    <button onclick="stopSpeech()">⏹️ Stop</button>
+    <button onclick="closeDetailedInsightsModal()">Close</button>
+  </div>
+</div>
+
+<!-- Visual Insights Shortcut Modal -->
+<div id="visualInsightsModal" class="modal">
+  <div class="modal-content">
+    <h2>🔑 Keyboard Shortcuts – Visual Analysis Tool</h2>
+    <ul>
+      <li><strong>alt + shift + H</strong> – Toggle High Contrast</li>
+      <li><strong>alt + shift + =</strong> – Increase Font Size (A+)</li>
+      <li><strong>alt + shift + -</strong> – Decrease Font Size (A-)</li>
+      <li><strong>alt + shift + Z</strong> – Reset Font Size</li>
+      <li><strong>alt + shift + U</strong> – Open File Input</li>
+      <li><strong>alt + shift + L</strong> – Load File</li>
+      <li><strong>alt + shift + C</strong> – Clear Sequence</li>
+      <li><strong>alt + shift + A</strong> – Analyze Sequence</li>
+      <li><strong>alt + shift + S</strong> – Speak Summary</li>
+      <li><strong>alt + shift + P</strong> – Chart Reading</li>
+      <li><strong>alt + shift + X</strong> – Stop Speech</li>
+      <li><strong>alt + shift + R</strong> – Download Report</li>
+      <li><strong>alt + shift + D</strong> – Download Chart</li>
+      <li><strong>alt + shift + S</strong> – Speak Shortcuts</li>
+               <li><strong>alt + shift + X</strong> – Stop Speech</li>
+                <li><strong>Esc</strong> – Close Shortcut Modal</li>
+    </ul>
+    <button onclick="speakShortcuts('visualInsightsModal')">🔊 Speak Shortcuts</button>
+    <button onclick="stopSpeech()">⏹️ Stop</button>
+    <button onclick="closeVisualInsightsModal()">Close</button>
+  </div>
+</div>
+
+<!-- DNA to Protein Shortcut Modal -->
+<div id="dnaToProteinModal" class="modal">
+  <div class="modal-content">
+    <h2>🔑 Keyboard Shortcuts – DNA to Protein Tool</h2>
+    <ul>
+      <li><strong>alt + shift + H</strong> – Toggle High Contrast</li>
+      <li><strong>alt + shift + =</strong> – Increase Font Size</li>
+      <li><strong>alt + shift + -</strong> – Decrease Font Size</li>
+      <li><strong>alt + shift + Z</strong> – Reset Font Size</li>
+      <li><strong>alt + shift + U</strong> – Open File Input</li>
+      <li><strong>alt + shift + T</strong> – Translate DNA</li>
+      <li><strong>alt + shift + C</strong> – Clear Input</li>
+      <li><strong>alt + shift + D</strong> – Download Single Frame</li>
+      <li><strong>alt + shift + A</strong> – Download All Frames</li>
+      <li><strong>alt + shift + F</strong> – Focus on Frame Selector</li>
+      <li><strong>alt + shift + S</strong> – Speak Shortcuts</li>
+               <li><strong>alt + shift + X</strong> – Stop Speech</li>
+               <li><strong>Esc</strong> – Close Shortcut Modal</li>
+    </ul>
+    <button onclick="speakShortcuts('dnaToProteinModal')">🔊 Speak Shortcuts</button>
+    <button onclick="stopSpeech()">⏹️ Stop</button>
+    <button onclick="closeDnaToProteinModal()">Close</button>
+  </div>
+</div>
+
+<!-- 🔊 VOICE SCRIPT -->
+<script>
+  function speakShortcuts(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    const heading = modal.querySelector("h2")?.textContent || "Shortcut Instructions";
+    const listItems = modal.querySelectorAll("ul li");
+    let textToSpeak = heading + ". ";
+
+    listItems.forEach(li => {
+      textToSpeak += li.textContent + ". ";
+    });
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = 'en-US';
+    utterance.rate = 1;
+    speechSynthesis.speak(utterance);
+  }
+
+  function stopSpeech() {
+    speechSynthesis.cancel();
+  }
+
+  // 🧠 Add keyboard shortcuts for voice control
+  document.addEventListener("keydown", function(e) {
+    const openModals = document.querySelectorAll(".modal");
+    let activeModal = null;
+
+    openModals.forEach(modal => {
+      if (modal.style.display === "flex") activeModal = modal;
+    });
+
+    if (!activeModal) return;
+
+    if (e.altKey && e.shiftKey && e.code === "KeyS") {
+      speakShortcuts(activeModal.id);
+    }
+    if (e.altKey && e.shiftKey && e.code === "KeyX") {
+      stopSpeech();
+    }
+    if (e.key === "Escape") {
+      stopSpeech();
+      activeModal.style.display = "none";
+    }
+  });
+</script>
+</body>
+</html>

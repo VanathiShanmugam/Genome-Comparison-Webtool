@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DNA to Protein Translator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    :root {
+      --bg-color: #0A0F1D;
+      --text-color: #ffffff;
+      --accent-color: #5ab2c1;
+      --container-bg: #1b243b;
+      --base-font-size: 16px;
+    }
+    body.high-contrast {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --accent-color: #003366;
+      --container-bg: #ddeeff;
+    }
+    html { font-size: var(--base-font-size); }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2em;
+      color: var(--accent-color);
+      margin-bottom: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background-color: var(--container-bg);
+      border-radius: 10px;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      font-size: 1em;
+      padding: 10px;
+      border-radius: 5px;
+      border: 2px solid var(--accent-color);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin-bottom: 10px;
+    }
+    input[type="file"] {
+      margin-bottom: 15px;
+      padding: 8px;
+      border: 2px dashed var(--accent-color);
+      border-radius: 5px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    button {
+      padding: 10px 20px;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    button:hover { opacity: 0.9; }
+    .controls, .frame-select { margin: 15px 0; }
+    #proteinOutput {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 15px;
+      font-family: monospace;
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .stop { color: red; font-weight: bold; }
+    a.download-link {
+      display: inline-block;
+      margin-top: 10px;
+      font-weight: bold;
+      color: var(--accent-color);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1><i class="fas fa-dna"></i> DNA to Protein Translator</h1>
+
+  <div class="controls">
+    <button onclick="toggleHighContrast()"><i class="fas fa-adjust"></i> High Contrast</button>
+    <button onclick="changeFontSize(2)"><i class="fas fa-plus"></i> A+</button>
+    <button onclick="changeFontSize(-2)"><i class="fas fa-minus"></i> A−</button>
+    <button onclick="resetFontSize()"><i class="fas fa-undo"></i> Undo</button>
+  </div>
+
+  <div class="container">
+    <input type="file" id="fileInput" accept=".txt,.fasta,.fa" onchange="loadFile()"><br>
+    <textarea id="dnaInput" placeholder="Paste DNA sequence here..."></textarea><br>
+    <button onclick="translateDNA()">Translate to Protein</button>
+    <button onclick="clearInput()">Clear</button>
+
+    <div class="frame-select">
+      <select id="frameSelect"></select>
+      <button onclick="downloadSingleFrame()">Download Selected Frame (.txt)</button>
+      <button onclick="downloadAllFrames()">Download All Frames (.txt)</button>
+    </div>
+
+    <div id="proteinOutput"></div>
+  </div>
+
+  <script>
+    const codonTable = {
+      'UUU':'F','UUC':'F','UUA':'L','UUG':'L','CUU':'L','CUC':'L','CUA':'L','CUG':'L',
+      'AUU':'I','AUC':'I','AUA':'I','AUG':'M','GUU':'V','GUC':'V','GUA':'V','GUG':'V',
+      'UCU':'S','UCC':'S','UCA':'S','UCG':'S','CCU':'P','CCC':'P','CCA':'P','CCG':'P',
+      'ACU':'T','ACC':'T','ACA':'T','ACG':'T','GCU':'A','GCC':'A','GCA':'A','GCG':'A',
+      'UAU':'Y','UAC':'Y','UAA':'*','UAG':'*','CAU':'H','CAC':'H','CAA':'Q','CAG':'Q',
+      'AAU':'N','AAC':'N','AAA':'K','AAG':'K','GAU':'D','GAC':'D','GAA':'E','GAG':'E',
+      'UGU':'C','UGC':'C','UGA':'*','UGG':'W','CGU':'R','CGC':'R','CGA':'R','CGG':'R',
+      'AGU':'S','AGC':'S','AGA':'R','AGG':'R','GGU':'G','GGC':'G','GGA':'G','GGG':'G'
+    };
+
+    let sixFrameProteins = [];
+
+    function cleanDNA(seq) {
+      return seq.replace(/[^ATGCatgc]/g, '');
+    }
+
+    function removeIntrons(seq) {
+      return seq.replace(/[acgt]/g, ''); // skip lowercase introns
+    }
+
+    function loadFile() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const lines = e.target.result.split(/\r?\n/);
+        const dnaLines = lines.filter(line => !line.startsWith(">"));
+        const cleaned = cleanDNA(dnaLines.join(""));
+        document.getElementById("dnaInput").value = cleaned;
+      };
+      reader.readAsText(file);
+    }
+
+    function translateFrame(dna, frameShift = 0) {
+      let mrna = dna.slice(frameShift).replace(/T/g, 'U');
+      let protein = "";
+      for (let i = 0; i <= mrna.length - 3; i += 3) {
+        const codon = mrna.substr(i, 3);
+        const aa = codonTable[codon] || '?';
+        protein += aa;
+      }
+      return protein;
+    }
+
+    function reverseComplement(dna) {
+      const complement = { A: "T", T: "A", G: "C", C: "G", a: "t", t: "a", g: "c", c: "g" };
+      return dna.split("").reverse().map(b => complement[b] || b).join("");
+    }
+
+    function highlightStops(seq) {
+      return seq.replace(/\*/g, '<span class="stop">*</span>');
+    }
+
+    function translateDNA() {
+      const rawDNA = document.getElementById("dnaInput").value;
+      if (!/^[ATGCatgc\s]*$/.test(rawDNA)) {
+        alert("Invalid characters found. Only A, T, G, C are allowed.");
+        return;
+      }
+
+      let dna = cleanDNA(rawDNA);
+      dna = removeIntrons(dna);
+
+      if (dna.length < 3) {
+        alert("Enter at least 3 valid DNA bases.");
+        return;
+      }
+
+      const startCodons = ["ATG", "TTG", "GTG", "CTG", "ATT", "ATC", "ATA"];
+      const start = dna.substring(0, 3).toUpperCase();
+      if (!startCodons.includes(start)) {
+        alert("DNA must start with a valid start codon: " + startCodons.join(", "));
+        return;
+      }
+
+      sixFrameProteins = [];
+
+      for (let i = 0; i < 3; i++) {
+        sixFrameProteins.push({
+          name: `+Frame_${i + 1}`,
+          sequence: translateFrame(dna, i)
+        });
+      }
+
+      const revDNA = reverseComplement(dna);
+      for (let i = 0; i < 3; i++) {
+        sixFrameProteins.push({
+          name: `-Frame_${i + 1}`,
+          sequence: translateFrame(revDNA, i)
+        });
+      }
+
+      const output = sixFrameProteins.map(p =>
+        `<b>${p.name}</b>\n${highlightStops(p.sequence)}`
+      ).join("<br><br>");
+
+      document.getElementById("proteinOutput").innerHTML = output;
+
+      const select = document.getElementById("frameSelect");
+      select.innerHTML = "";
+      sixFrameProteins.forEach((f, i) => {
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = f.name;
+        select.appendChild(option);
+      });
+    }
+
+    function downloadSingleFrame() {
+      const index = document.getElementById("frameSelect").value;
+      const frame = sixFrameProteins[index];
+      const fasta = `>${frame.name}\n${frame.sequence.replace(/(.{70})/g, "$1\n")}`;
+      const blob = new Blob([fasta], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${frame.name}.txt`;
+      a.click();
+    }
+
+    function downloadAllFrames() {
+      const content = sixFrameProteins.map(p =>
+        `>${p.name}\n${p.sequence.replace(/(.{70})/g, "$1\n")}`
+      ).join("\n");
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = "six_frame_proteins.txt";
+      a.click();
+    }
+
+    function clearInput() {
+      document.getElementById("dnaInput").value = '';
+      document.getElementById("proteinOutput").innerHTML = '';
+      document.getElementById("frameSelect").innerHTML = '';
+    }
+
+    function toggleHighContrast() {
+      document.body.classList.toggle("high-contrast");
+    }
+
+    function changeFontSize(change) {
+      const html = document.querySelector("html");
+      let currentSize = parseFloat(getComputedStyle(html).fontSize);
+      html.style.fontSize = (currentSize + change) + "px";
+    }
+
+    function resetFontSize() {
+      document.querySelector("html").style.fontSize = "16px";
+    }
+
+document.addEventListener("keydown", function (e) {
+    const tag = document.activeElement.tagName;
+    const isEditing = tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT";
+    if (isEditing) return;
+
+    if (e.altKey && e.shiftKey) {
+      switch (e.code) {
+        case "KeyH": toggleHighContrast(); break;
+        case "Equal": changeFontSize(2); break;
+        case "Minus": changeFontSize(-2); break;
+        case "KeyZ": resetFontSize(); break;
+        case "KeyU": document.getElementById("fileInput").click(); break;
+        case "KeyT": translateDNA(); break;
+        case "KeyC": clearInput(); break;
+        case "KeyD": downloadSingleFrame(); break;
+        case "KeyA": downloadAllFrames(); break;
+        case "KeyF": {
+          const frameSelect = document.getElementById("frameSelect");
+          frameSelect.focus();
+          frameSelect.size = frameSelect.options.length; // Optional: expand dropdown
+          setTimeout(() => frameSelect.size = 0, 1500);  // Auto-collapse after 1.5s
+          break;
+        }
+      }
+    }
+  });
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!-- START OF FILE -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Genome Visual Analysis Tool</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* [No style changes made. Your original styles are preserved.] */
+    :root {
+      --bg-color: #0A0F1D;
+      --text-color: #ffffff;
+      --accent-color: #5ab2c1;
+      --textarea-bg: #1b243b;
+      --output-bg: #1b243b;
+    }
+
+    body.high-contrast {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --accent-color: #003366;
+      --textarea-bg: #ddeeff;
+      --output-bg: #ddeeff;
+    }
+
+    html { font-size: 16px; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container { max-width: 1000px; margin: auto; padding: 20px; }
+
+    h1 { color: var(--accent-color); font-size: 2.5em; margin-bottom: 20px; }
+
+    .toolbar {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;
+    }
+
+    .toolbar button, button {
+      padding: 10px 20px; font-size: 1em;
+      background-color: var(--accent-color); color: white;
+      border: none; border-radius: 5px; margin: 5px; cursor: pointer;
+    }
+
+    section {
+      background-color: var(--output-bg);
+      border-radius: 10px; padding: 20px; margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 90%; height: 120px;
+      padding: 10px; font-size: 1em;
+      border: 2px solid var(--accent-color);
+      border-radius: 5px;
+      background-color: var(--textarea-bg); color: var(--text-color);
+      resize: none;
+    }
+
+    input[type="file"] {
+      background-color: var(--textarea-bg);
+      color: var(--text-color);
+      padding: 10px;
+      border: 2px dashed var(--accent-color);
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .nucleotide-bars {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .nucleotide-bar {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .bar-label, .bar-value, .summary-text {
+      font-weight: bold;
+      color: var(--accent-color);
+      margin-top: 5px;
+    }
+
+    .bar-container {
+      width: 50px; height: 150px;
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      margin: auto;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: linear-gradient(to top, #5ab2c1, #8ac6d1);
+      transition: height 0.6s ease-out;
+    }
+
+    canvas {
+      max-width: 100%;
+      max-height: 400px;
+    }
+
+    .download-links {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .speaking-indicator {
+      display: none;
+      color: var(--accent-color);
+      font-style: italic;
+    }
+
+    .speaking {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1><i class="fas fa-dna"></i> Genome Visual Analysis Tool</h1>
+
+    <div class="toolbar">
+      <button onclick="toggleContrast()">Toggle High Contrast</button>
+      <button onclick="resizeFont('increase')">A+</button>
+      <button onclick="resizeFont('decrease')">A-</button>
+      <button onclick="resizeFont('reset')">Reset</button>
+    </div>
+
+    <section>
+      <textarea id="dnaSequence" placeholder="Enter DNA sequence here..." oninput="validateSequence(this)"></textarea>
+      <div class="error" id="sequenceError" style="color: red;"></div>
+    </section>
+
+    <section>
+      <input type="file" id="fileInput" accept=".txt,.fasta,.fa">
+      <div>
+        <button onclick="loadFile()"><i class="fas fa-upload"></i> Load File</button>
+        <button onclick="clearSequence()"><i class="fas fa-trash"></i> Clear</button>
+      </div>
+    </section>
+
+    <section>
+      <button onclick="analyzeSequence()"><i class="fas fa-dna"></i> Analyze Sequence</button>
+    </section>
+
+    <section id="summaryOutput" style="display:none;">
+      <div class="chart-title"><strong>Sequence Analysis Report</strong></div>
+      <div id="resultStats"></div>
+      <div class="nucleotide-bars" id="nucleotideBars"></div>
+      <div id="reportContent" class="summary-text" style="margin-top: 20px; text-align: left;"></div>
+
+      <div class="download-links">
+        <button onclick="downloadReport()"><i class="fas fa-download"></i> Download Report</button>
+        <button onclick="downloadChart()"><i class="fas fa-download"></i> Download Chart</button>
+        <button onclick="speakSummary()" id="playButton"><i class="fas fa-volume-up"></i> Play Summary</button>
+        <button onclick="stopAllSpeech()" id="stopButton"><i class="fas fa-volume-mute"></i> Stop</button>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="chart-title">Nucleotide Frequency Distribution</h2>
+      <canvas id="chart"></canvas>
+      <!-- ✅ New Chart Sonification Button -->
+      <div style="margin-top: 10px;">
+        <button onclick="speakChartOnly()"><i class="fas fa-music"></i> Chart Reading</button>
+      </div>
+    </section>
+
+    <div class="speaking-indicator" id="speakingIndicator">
+      <i id="speakingIcon" class="fas fa-volume-up"></i> Speaking analysis...
+    </div>
+  </main>
+
+  <script>
+    let latestCounts = null;
+
+    function validateSequence(textarea) {
+      const sequence = textarea.value.toUpperCase().replace(/\s/g, '');
+      const validChars = /^[ACGT]*$/;
+      const error = document.getElementById('sequenceError');
+      error.textContent = validChars.test(sequence) ? '' : "Invalid characters detected. Only A, C, G, T allowed.";
+    }
+
+    function loadFile() {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        let content = e.target.result;
+        if (content.startsWith('>')) content = content.split('\n').slice(1).join('').replace(/\s/g, '');
+        document.getElementById('dnaSequence').value = content.trim();
+        validateSequence(document.getElementById('dnaSequence'));
+      };
+      reader.readAsText(file);
+    }
+
+    function clearSequence() {
+      document.getElementById('dnaSequence').value = "";
+      document.getElementById('sequenceError').textContent = "";
+      document.getElementById('summaryOutput').style.display = "none";
+      stopAllSpeech();
+    }
+
+    function analyzeSequence() {
+      const input = document.getElementById('dnaSequence').value.toUpperCase().replace(/\s/g, '');
+      if (!input || /[^ACGT]/.test(input)) return alert("Please enter a valid DNA sequence (A, C, G, T only).");
+
+      const counts = { A: 0, C: 0, G: 0, T: 0 };
+      for (const nt of input) counts[nt]++;
+      latestCounts = counts;
+
+      const total = input.length;
+      const gc = ((counts.G + counts.C) / total * 100).toFixed(2);
+      const at = ((counts.A + counts.T) / total * 100).toFixed(2);
+
+      document.getElementById('resultStats').innerHTML = `
+        <p><strong>Total Length:</strong> ${total} bases</p>
+        <p><strong>GC Content:</strong> ${gc}%</p>
+        <p><strong>AT Content:</strong> ${at}%</p>
+      `;
+
+      const fullNames = { A: 'Adenine (A)', T: 'Thymine (T)', C: 'Cytosine (C)', G: 'Guanine (G)' };
+      const bars = ['A', 'T', 'C', 'G'].map(n => {
+        const percent = (counts[n] / total * 100).toFixed(1);
+        return `<div class="nucleotide-bar">
+                  <div class="bar-label">${n}</div>
+                  <div class="bar-container"><div class="bar-fill" style="height:${percent}%"></div></div>
+                  <div class="bar-value">${percent}%</div>
+                  <div class="summary-text">${counts[n]} ${fullNames[n]}</div>
+                </div>`;
+      }).join('');
+
+      document.getElementById('nucleotideBars').innerHTML = bars;
+
+      document.getElementById('reportContent').innerHTML = `
+        <p>The sequence contains ${counts.A} Adenine (A),</p>
+        <p>${counts.C} Cytosine (C),</p>
+        <p>${counts.G} Guanine (G),</p>
+        <p>and ${counts.T} Thymine (T).</p>
+        <p>GC content is ${gc}%, and AT content is ${at}%.</p>
+      `;
+
+      document.getElementById('summaryOutput').style.display = "block";
+      renderChart(counts);
+    }
+
+    function renderChart(counts) {
+      const ctx = document.getElementById('chart').getContext('2d');
+      if (window.barChart) window.barChart.destroy();
+      const textColor = getComputedStyle(document.body).getPropertyValue('--text-color');
+      window.barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['A', 'C', 'G', 'T'],
+          datasets: [{
+            label: 'Nucleotide Count',
+            data: [counts.A, counts.C, counts.G, counts.T],
+            backgroundColor: ['#ff9999', '#99ccff', '#99ff99', '#ffff99']
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: textColor }
+            },
+            x: {
+              ticks: { color: textColor }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: textColor }
+            }
+          }
+        }
+      });
+    }
+
+    function speakSummary() {
+      const text = document.getElementById('reportContent').textContent;
+      speakText(text);
+    }
+
+    function speakText(text) {
+      stopAllSpeech();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => {
+        document.getElementById('speakingIndicator').style.display = "block";
+        document.getElementById('speakingIcon').classList.add('speaking');
+      };
+      utterance.onend = () => {
+        document.getElementById('speakingIndicator').style.display = "none";
+        document.getElementById('speakingIcon').classList.remove('speaking');
+      };
+      speechSynthesis.speak(utterance);
+    }
+
+    function stopAllSpeech() {
+      speechSynthesis.cancel();
+      document.getElementById('speakingIndicator').style.display = "none";
+      document.getElementById('speakingIcon').classList.remove('speaking');
+    }
+
+    function speakChartOnly() {
+      if (!window.barChart) return alert("Please analyze a sequence first.");
+      const data = window.barChart.data.datasets[0].data;
+      const text = `Bar chart: Adenine ${data[0]}. Cytosine ${data[1]}. Guanine ${data[2]}. Thymine ${data[3]}.`;
+      speakText(text);
+    }
+
+    function downloadReport() {
+      const stats = document.getElementById('resultStats').textContent;
+      const report = document.getElementById('reportContent').textContent;
+      const content = `Genome Visual Analysis Report\n\n${stats}\n\n${report}`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'genome_analysis_report.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function downloadChart() {
+      const canvas = document.getElementById('chart');
+      const image = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = image;
+      a.download = 'nucleotide_chart.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function toggleContrast() {
+      document.body.classList.toggle('high-contrast');
+      localStorage.setItem('contrastMode', document.body.classList.contains('high-contrast') ? 'on' : 'off');
+      if (window.barChart) {
+        const color = getComputedStyle(document.body).getPropertyValue('--text-color');
+        window.barChart.options.scales.x.ticks.color = color;
+        window.barChart.options.scales.y.ticks.color = color;
+        window.barChart.options.plugins.legend.labels.color = color;
+        window.barChart.update();
+      }
+    }
+
+    function resizeFont(action) {
+      const root = document.documentElement;
+      const currentSize = parseFloat(getComputedStyle(root).fontSize);
+      if (action === 'increase') root.style.fontSize = `${currentSize + 1}px`;
+      else if (action === 'decrease') root.style.fontSize = `${Math.max(currentSize - 1, 12)}px`;
+      else root.style.fontSize = '16px';
+    }
+
+    window.onload = () => {
+      if (localStorage.getItem('contrastMode') === 'on') {
+        document.body.classList.add('high-contrast');
+      }
+      window.addEventListener('beforeunload', stopAllSpeech);
+    };
+  </script>
+</body>
+</html>

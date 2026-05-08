@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detailed Insights - Genome Comparison Tool</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-color: #0A0F1D;
+      --text-color: #ffffff;
+      --accent-color: #5ab2c1;
+      --error-color: #ff6b6b;
+      --valid-color: #81c784;
+      --container-bg: #1b243b;
+      --base-font-size: 16px;
+    }
+
+    body.high-contrast {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --accent-color: #003366;
+      --error-color: #cc0000;
+      --valid-color: #006600;
+      --container-bg: #ddeeff;
+    }
+
+    html {
+      font-size: var(--base-font-size);
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      color: var(--accent-color);
+      margin-bottom: 20px;
+    }
+
+    .insight-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: var(--container-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 1s ease-in forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    textarea, input, button, p, h2, canvas, .reverse-complement, .codon-usage {
+      display: block;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      border-radius: 5px;
+      padding: 10px;
+      font-size: 1em;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 2px solid var(--accent-color);
+    }
+
+    button, .analyze-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: var(--accent-color);
+  border: none;
+  border-radius: 5px;
+  color: #ffffff;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.analyze-button {
+  display: block;
+  margin: 10px auto; /* centers the button */
+  padding: 10px 20px;
+  background-color: var(--accent-color);
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+    .analyze-button:hover {
+      transform: scale(1.02);
+    }
+
+    .file-upload, .stats, .chart-container, .motif-finder, .reverse-complement, .codon-usage {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .error { color: var(--error-color); }
+    .valid { color: var(--valid-color); }
+
+   canvas {
+      max-width: 250px;
+    }
+
+    .btn-group, .toggle-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .btn-group button,
+    .toggle-group button {
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: var(--accent-color);
+      border: none;
+      border-radius: 5px;
+      color: #ffffff;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn-group button:hover,
+    .toggle-group button:hover {
+      transform: scale(1.02);
+    }
+
+    #reverseComplement {
+      margin-top: 10px;
+      background-color: var(--bg-color);
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    /* Speech control styles */
+    .speech-control {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .speech-indicator {
+      display: none;
+      margin-top: 10px;
+      color: var(--accent-color);
+    }
+    
+    .speaking {
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    
+    /* New download button styles */
+    .download-button {
+      padding: 8px 15px;
+      font-size: 0.9em;
+      background-color: var(--accent-color);
+      border: none;
+      border-radius: 5px;
+      color: #ffffff;
+      margin: 10px auto;
+      cursor: pointer;
+      display: block;
+    }
+    
+    .download-button:hover {
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+<body>
+  <h1><i class="fas fa-dna"></i> Detailed Insights</h1>
+
+  <div class="toggle-group">
+    <button onclick="toggleHighContrast()">Toggle High Contrast</button>
+    <button onclick="changeFontSize(2)">A+</button>
+    <button onclick="changeFontSize(-2)">A−</button>
+    <button onclick="resetFontSize()">Undo</button>
+  </div>
+
+  <div class="insight-container">
+    <textarea id="dnaSequence" placeholder="Enter DNA sequence here..." oninput="validateSequence(this)"></textarea>
+    <div class="error" id="sequenceError"></div>
+
+    <div class="file-upload">
+      <h2><i class="fas fa-file-upload"></i> Upload Sequence File</h2>
+      <input type="file" id="fileInput" accept=".txt,.fasta,.fa">
+      <div class="btn-group">
+        <button class="analyze-button" onclick="loadFile()">Load File</button>
+        <button class="analyze-button" onclick="clearSequence()">Clear</button>
+      </div>
+    </div>
+
+    <button class="analyze-button" onclick="generateInsights()">Generate Insights</button>
+
+    <div class="stats">
+      <h2>Summary Statistics</h2>
+      <p id="sequenceLength"></p>
+      <p id="gcContent"></p>
+      <p id="atContent"></p>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="gcChart"></canvas>
+
+<!-- Download + Sonification buttons for Pie Chart -->
+<button class="download-button" onclick="downloadPieChart()">
+  <i class="fas fa-download"></i> Download Pie Chart
+</button>
+<div class="speech-control">
+  <button class="analyze-button" onclick="speakPieChartStats()">
+    <i class="fas fa-volume-up"></i> Speak GC/AT Content
+  </button>
+  <button class="analyze-button" onclick="stopPieSpeech()">
+    <i class="fas fa-stop-circle"></i> Stop
+  </button>
+</div>
+<div id="pieSpeaking" class="speech-indicator">
+  <i class="fas fa-volume-up speaking"></i> Speaking GC/AT stats...
+</div>
+
+    </div>
+
+    <div class="motif-finder">
+      <h2>Motif Finder</h2>
+      <input id="motifInput" placeholder="Enter motif (e.g., ATG)">
+      <button class="analyze-button" onclick="findMotif()">Find Motif</button>
+      <p id="motifResults"></p>
+      
+      <!-- Download button for motif results -->
+      <button class="download-button" onclick="downloadMotifResults()">
+        <i class="fas fa-download"></i> Download Results
+      </button>
+      
+      <!-- Speech controls for motif finder -->
+      <div class="speech-control">
+        <button class="analyze-button" onclick="speakMotifResults()">
+          <i class="fas fa-volume-up"></i> Speak Results
+        </button>
+        <button class="analyze-button" onclick="stopMotifSpeech()">
+          <i class="fas fa-stop-circle"></i> Stop
+        </button>
+      </div>
+      <div id="motifSpeaking" class="speech-indicator">
+        <i class="fas fa-volume-up speaking"></i> Speaking motif results...
+      </div>
+    </div>
+
+    <div class="reverse-complement">
+      <h2>Reverse Complement</h2>
+      <button class="analyze-button" onclick="generateReverseComplement()">Generate Reverse Complement</button>
+      <div id="reverseComplement"></div>
+      
+      <!-- Download button for reverse complement -->
+      <button class="download-button" onclick="downloadReverseComplement()">
+        <i class="fas fa-download"></i> Download
+      </button>
+    </div>
+
+    <div class="codon-usage">
+      <h2>Codon Usage Statistics</h2>
+      <button class="analyze-button" onclick="calculateCodonUsage()">Calculate Codon Usage</button>
+      <p id="codonUsageResults"></p>
+      <div id="aminoAcidTable" style="margin-top: 20px;"></div>
+      <canvas id="aminoAcidChart" style="margin-top: 20px;"></canvas>
+      
+      <!-- Download button for codon usage -->
+      <button class="download-button" onclick="downloadCodonUsage()">
+        <i class="fas fa-download"></i> Download Results
+      </button>
+      
+      <!-- Speech controls for codon usage -->
+      <div class="speech-control">
+        <button class="analyze-button" onclick="speakAminoAcidStats()">
+          <i class="fas fa-volume-up"></i> Speak Stats
+        </button>
+        <button class="analyze-button" onclick="stopCodonSpeech()">
+          <i class="fas fa-stop-circle"></i> Stop
+        </button>
+      </div>
+      <div id="codonSpeaking" class="speech-indicator">
+        <i class="fas fa-volume-up speaking"></i> Speaking amino acid stats...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Speech synthesis variables
+    let motifUtterance = null;
+    let codonUtterance = null;
+    let motifSpeechActive = false;
+    let codonSpeechActive = false;
+    
+    // Download functions
+    function downloadText(content, filename) {
+      if (!content) {
+        alert("No content to download");
+        return;
+      }
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    
+    function downloadMotifResults() {
+      const results = document.getElementById('motifResults').textContent;
+      downloadText(results, 'motif_results.txt');
+    }
+    
+    function downloadReverseComplement() {
+      const revComp = document.getElementById('reverseComplement').textContent;
+      downloadText(revComp, 'reverse_complement.txt');
+    }
+    
+    function downloadCodonUsage() {
+      let content = document.getElementById('codonUsageResults').textContent + "\n\n";
+      
+      // Add amino acid table data to download content
+      const table = document.getElementById('aminoAcidTable');
+      if (table) {
+        const rows = table.getElementsByTagName('tr');
+        for (let row of rows) {
+          const cells = row.getElementsByTagName('td');
+          if (cells.length) {
+            content += cells[0].textContent + ": " + cells[1].textContent + "\n";
+          }
+        }
+      }
+      
+      downloadText(content, 'codon_usage.txt');
+    }
+    
+    function validateSequence(textarea) {
+      const seq = textarea.value.trim().toUpperCase();
+      const cleanSeq = seq.replace(/\s+/g, "");
+      const errorElement = document.getElementById("sequenceError");
+      const validChars = /^[ATCG]+$/;
+      if (!seq) return errorElement.innerHTML = "";
+      if (!validChars.test(cleanSeq)) {
+        const invalid = [...new Set(cleanSeq.split('').filter(c => !"ATCG".includes(c)))];
+        errorElement.innerHTML = `<span class="error">Invalid characters: ${invalid.join(', ')}</span>`;
+        return false;
+      }
+      errorElement.innerHTML = `<span class="valid">Valid DNA sequence</span>`;
+      return true;
+    }
+
+    function loadFile() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Please select a file first");
+      const reader = new FileReader();
+      reader.onload = e => {
+        let text = e.target.result;
+        if (text.startsWith(">")) text = text.split("\n").slice(1).join("").replace(/\s+/g, "");
+        document.getElementById("dnaSequence").value = text;
+        validateSequence(document.getElementById("dnaSequence"));
+      };
+      reader.readAsText(file);
+    }
+
+    function clearSequence() {
+      document.getElementById("dnaSequence").value = "";
+      document.getElementById("fileInput").value = "";
+      document.getElementById("sequenceError").innerHTML = "";
+    }
+
+    function generateInsights() {
+      const sequence = document.getElementById("dnaSequence").value.toUpperCase().replace(/\s+/g, "");
+      if (!validateSequence(document.getElementById("dnaSequence"))) return;
+      const length = sequence.length;
+      const gc = (sequence.match(/[GC]/g) || []).length;
+      const at = (sequence.match(/[AT]/g) || []).length;
+      const gcContent = ((gc / length) * 100).toFixed(2);
+      const atContent = ((at / length) * 100).toFixed(2);
+
+      document.getElementById("sequenceLength").textContent = `Sequence Length: ${length} nucleotides`;
+      document.getElementById("gcContent").textContent = `GC Content: ${gcContent}%`;
+      document.getElementById("atContent").textContent = `AT Content: ${atContent}%`;
+
+      const ctx = document.getElementById("gcChart").getContext("2d");
+      if (window.gcChartInstance) window.gcChartInstance.destroy();
+      window.gcChartInstance = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["GC Content", "AT Content"],
+          datasets: [{
+            data: [gcContent, atContent],
+            backgroundColor: ["#54b6b6", "#f15b5b"]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: getComputedStyle(document.body).getPropertyValue('--text-color')
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function findMotif() {
+      const sequence = document.getElementById("dnaSequence").value.toUpperCase().replace(/\s+/g, "");
+      const motif = document.getElementById("motifInput").value.toUpperCase().replace(/\s+/g, "");
+      if (!sequence || !motif) return alert("Enter both DNA sequence and motif");
+      let index = sequence.indexOf(motif), positions = [];
+      while (index !== -1) {
+        positions.push(index + 1);
+        index = sequence.indexOf(motif, index + 1);
+      }
+      const resultText = positions.length ? 
+        `Motif found at: ${positions.join(", ")} (${positions.length} times)` : 
+        "Motif not found.";
+      document.getElementById("motifResults").textContent = resultText;
+    }
+    
+    function speakMotifResults() {
+      stopMotifSpeech();
+      
+      const results = document.getElementById("motifResults").textContent;
+      if (!results) return alert("Find a motif first");
+      
+      if (!('speechSynthesis' in window)) {
+        alert("Speech synthesis not supported in your browser");
+        return;
+      }
+      
+      motifUtterance = new SpeechSynthesisUtterance(results);
+      motifUtterance.pitch = 1;
+      motifUtterance.rate = 1;
+      motifUtterance.volume = 1;
+      
+      motifUtterance.onstart = () => {
+        motifSpeechActive = true;
+        document.getElementById("motifSpeaking").style.display = "block";
+      };
+      
+      motifUtterance.onend = () => {
+        motifSpeechActive = false;
+        document.getElementById("motifSpeaking").style.display = "none";
+      };
+      
+      speechSynthesis.speak(motifUtterance);
+    }
+    
+    function stopMotifSpeech() {
+      if (motifSpeechActive && speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        motifSpeechActive = false;
+        document.getElementById("motifSpeaking").style.display = "none";
+      }
+    }
+
+    function generateReverseComplement() {
+      const seq = document.getElementById("dnaSequence").value.toUpperCase().replace(/\s+/g, "");
+      const comp = { A: "T", T: "A", C: "G", G: "C" };
+      const revComp = seq.split("").map(n => comp[n] || n).reverse().join("");
+      document.getElementById("reverseComplement").textContent = revComp;
+    }
+
+  function calculateCodonUsage() {
+  const seq = document.getElementById("dnaSequence").value.toUpperCase().replace(/\s+/g, "");
+  if (seq.length < 3) {
+    document.getElementById("codonUsageResults").textContent = "Too short for codon analysis";
+    return;
+  }
+
+  const codonTable = {
+    'TTT': 'F (Phe)', 'TTC': 'F (Phe)', 'TTA': 'L (Leu)', 'TTG': 'L (Leu)',
+    'CTT': 'L (Leu)', 'CTC': 'L (Leu)', 'CTA': 'L (Leu)', 'CTG': 'L (Leu)',
+    'ATT': 'I (Ile)', 'ATC': 'I (Ile)', 'ATA': 'I (Ile)', 'ATG': 'M (Met)',
+    'GTT': 'V (Val)', 'GTC': 'V (Val)', 'GTA': 'V (Val)', 'GTG': 'V (Val)',
+    'TCT': 'S (Ser)', 'TCC': 'S (Ser)', 'TCA': 'S (Ser)', 'TCG': 'S (Ser)',
+    'CCT': 'P (Pro)', 'CCC': 'P (Pro)', 'CCA': 'P (Pro)', 'CCG': 'P (Pro)',
+    'ACT': 'T (Thr)', 'ACC': 'T (Thr)', 'ACA': 'T (Thr)', 'ACG': 'T (Thr)',
+    'GCT': 'A (Ala)', 'GCC': 'A (Ala)', 'GCA': 'A (Ala)', 'GCG': 'A (Ala)',
+    'TAT': 'Y (Tyr)', 'TAC': 'Y (Tyr)', 'TAA': 'Stop',     'TAG': 'Stop',
+    'CAT': 'H (His)', 'CAC': 'H (His)', 'CAA': 'Q (Gln)',  'CAG': 'Q (Gln)',
+    'AAT': 'N (Asn)', 'AAC': 'N (Asn)', 'AAA': 'K (Lys)',  'AAG': 'K (Lys)',
+    'GAT': 'D (Asp)', 'GAC': 'D (Asp)', 'GAA': 'E (Glu)',  'GAG': 'E (Glu)',
+    'TGT': 'C (Cys)', 'TGC': 'C (Cys)', 'TGA': 'Stop',     'TGG': 'W (Trp)',
+    'CGT': 'R (Arg)', 'CGC': 'R (Arg)', 'CGA': 'R (Arg)',  'CGG': 'R (Arg)',
+    'AGT': 'S (Ser)', 'AGC': 'S (Ser)', 'AGA': 'R (Arg)',  'AGG': 'R (Arg)',
+    'GGT': 'G (Gly)', 'GGC': 'G (Gly)', 'GGA': 'G (Gly)',  'GGG': 'G (Gly)'
+  };
+
+  const codonCounts = {};
+  const aminoAcidCounts = {};
+
+  for (let i = 0; i <= seq.length - 3; i += 3) {
+    const codon = seq.substr(i, 3);
+    if (codon.length === 3) {
+      codonCounts[codon] = (codonCounts[codon] || 0) + 1;
+      const aa = codonTable[codon] || "Unknown";
+      aminoAcidCounts[aa] = (aminoAcidCounts[aa] || 0) + 1;
+    }
+  }
+
+  // Codon to AA display
+  const result = Object.entries(codonCounts).map(([codon, count]) => {
+    const aa = codonTable[codon] || "Unknown";
+    return `${codon} → ${aa} : ${count}`;
+  });
+  document.getElementById("codonUsageResults").innerHTML = result.join("<br>") || "No complete codons.";
+
+  // Process AA data
+  const total = Object.values(aminoAcidCounts).reduce((a, b) => a + b, 0);
+  const aaData = Object.entries(aminoAcidCounts)
+    .filter(([aa]) => aa !== "Stop" && aa !== "Unknown")
+    .map(([aa, count]) => ({ label: aa, percent: Math.round((count / total) * 100) }))
+    .sort((a, b) => b.percent - a.percent); // Sort descending for better bar graph
+
+  const labels = aaData.map(item => ""); // empty labels
+  const values = aaData.map(item => item.percent);
+
+  // Draw bar chart (no Y labels)
+  const ctx = document.getElementById("aminoAcidChart").getContext("2d");
+  if (window.aminoAcidChartInstance) window.aminoAcidChartInstance.destroy();
+
+  window.aminoAcidChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "% of Amino Acids",
+        data: values,
+        backgroundColor: "#5ab2c1"
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      scales: {
+        x: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Percentage (%)',
+            color: getComputedStyle(document.body).getPropertyValue('--text-color')
+          },
+          ticks: {
+            color: getComputedStyle(document.body).getPropertyValue('--text-color')
+          }
+        },
+        y: {
+          ticks: {
+            display: false // hide labels
+          },
+          grid: {
+            display: false
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `Amino Acid: ${aaData[ctx.dataIndex].label} — ${ctx.parsed.x}%`
+          }
+        }
+      }
+    }
+  });
+
+  // Generate AA % Table
+  let tableHTML = "<table style='margin: 0 auto; border-collapse: collapse; color: var(--text-color);'>";
+  tableHTML += "<tr><th style='padding: 8px; border: 1px solid;'>Amino Acid</th><th style='padding: 8px; border: 1px solid;'>Percentage</th></tr>";
+  aaData.forEach(({ label, percent }) => {
+    tableHTML += `<tr><td style='padding: 8px; border: 1px solid;'>${label}</td><td style='padding: 8px; border: 1px solid;'>${percent}%</td></tr>`;
+  });
+  tableHTML += "</table>";
+
+  document.getElementById("aminoAcidTable").innerHTML = tableHTML;
+  
+  // Store amino acid data for speech
+  window.aminoAcidData = aaData;
+  window.totalAminoAcids = total;
+}
+    
+    function speakAminoAcidStats() {
+      stopCodonSpeech();
+      
+      if (!window.aminoAcidData || window.aminoAcidData.length === 0) {
+        alert("Calculate codon usage first");
+        return;
+      }
+      
+      if (!('speechSynthesis' in window)) {
+        alert("Speech synthesis not supported in your browser");
+        return;
+      }
+      
+      // Prepare speech content - now includes ALL amino acids
+      let speechText = `Found ${window.totalAminoAcids} amino acids. `;
+      speechText += "Amino acid composition: ";
+      
+      // Speak each amino acid with its percentage
+      window.aminoAcidData.forEach((item, index) => {
+        speechText += `${item.label}: ${item.percent} percent. `;
+      });
+      
+      codonUtterance = new SpeechSynthesisUtterance(speechText);
+      codonUtterance.pitch = 1;
+      codonUtterance.rate = 0.85; // Slightly slower to comprehend all data
+      codonUtterance.volume = 1;
+      
+      codonUtterance.onstart = () => {
+        codonSpeechActive = true;
+        document.getElementById("codonSpeaking").style.display = "block";
+      };
+      
+      codonUtterance.onend = () => {
+        codonSpeechActive = false;
+        document.getElementById("codonSpeaking").style.display = "none";
+      };
+      
+      speechSynthesis.speak(codonUtterance);
+    }
+    
+    function stopCodonSpeech() {
+      if (codonSpeechActive && speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        codonSpeechActive = false;
+        document.getElementById("codonSpeaking").style.display = "none";
+      }
+    }
+    
+    function stopAllSpeech() {
+      stopMotifSpeech();
+      stopCodonSpeech();
+    }
+
+   function toggleHighContrast() {
+  document.body.classList.toggle('high-contrast');
+  localStorage.setItem('contrastMode', document.body.classList.contains('high-contrast') ? 'on' : 'off');
+
+  // Update Chart.js label colors
+  if (window.aminoAcidChartInstance) {
+    const textColor = getComputedStyle(document.body).getPropertyValue('--text-color');
+    window.aminoAcidChartInstance.options.scales.x.ticks.color = textColor;
+    window.aminoAcidChartInstance.options.scales.x.title.color = textColor;
+    window.aminoAcidChartInstance.options.scales.y.ticks.color = textColor;
+    window.aminoAcidChartInstance.update();
+  }
+}
+
+
+    function changeFontSize(amount) {
+      const html = document.documentElement;
+      let fontSize = parseInt(window.getComputedStyle(html).fontSize);
+      html.style.fontSize = `${fontSize + amount}px`;
+    }
+
+    function resetFontSize() {
+      document.documentElement.style.fontSize = '16px';
+    }
+
+    
+let pieUtterance = null;
+let pieSpeechActive = false;
+
+function speakPieChartStats() {
+  stopPieSpeech();
+  const gc = document.getElementById("gcContent")?.textContent;
+  const at = document.getElementById("atContent")?.textContent;
+  const length = document.getElementById("sequenceLength")?.textContent;
+  if (!gc || !at || !length) return alert("Generate insights first");
+  const text = `${length}. ${gc}. ${at}.`;
+  pieUtterance = new SpeechSynthesisUtterance(text);
+  pieUtterance.onstart = () => {
+    pieSpeechActive = true;
+    document.getElementById("pieSpeaking").style.display = "block";
+  };
+  pieUtterance.onend = () => {
+    pieSpeechActive = false;
+    document.getElementById("pieSpeaking").style.display = "none";
+  };
+  speechSynthesis.speak(pieUtterance);
+}
+
+function stopPieSpeech() {
+  if (pieSpeechActive && speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+    pieSpeechActive = false;
+    document.getElementById("pieSpeaking").style.display = "none";
+  }
+}
+
+function downloadPieChart() {
+  const canvas = document.getElementById("gcChart");
+  const link = document.createElement("a");
+  link.download = "GC_AT_Content_Chart.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+
+window.onload = () => {
+      if (localStorage.getItem('contrastMode') === 'on') {
+        document.body.classList.add('high-contrast');
+      }
+    }
+
+document.addEventListener("keydown", function (e) {
+  const isEditing = ["TEXTAREA", "INPUT"].includes(document.activeElement.tagName);
+  if (isEditing) return;
+
+  if (e.altKey && e.shiftKey) {
+    switch (e.code) {
+      case "KeyU": document.getElementById('fileInput').click(); break;     // Upload
+      case "KeyL": loadFile(); break;                                       // Load
+      case "KeyC": clearSequence(); break;                                  // Clear
+      case "KeyG": generateInsights(); break;                               // Generate
+      case "KeyM": findMotif(); break;                                      // Motif
+      case "KeyS": speakMotifResults(); break;                              // Speak motif
+      case "KeyD": downloadMotifResults(); break;                           // Download motif
+      case "KeyR": generateReverseComplement(); break;                      // Reverse
+      case "KeyB": downloadReverseComplement(); break;                      // Backup reverse
+      case "KeyA": calculateCodonUsage(); break;                            // Amino acids
+      case "KeyT": speakAminoAcidStats(); break;                            // Talk codons
+      case "KeyO": downloadCodonUsage(); break;                             // Output codons
+      case "KeyH": toggleHighContrast(); break;                             // High contrast
+      case "Equal": changeFontSize(2); break;                               // Font +
+      case "Minus": changeFontSize(-2); break;                              // Font -
+      case "KeyZ": resetFontSize(); break;                                  // Zero font reset
+      case "KeyX": stopAllSpeech(); break;                                  // Stop all
+    }
+  }
+
+  if (e.key === "Escape") {
+    stopAllSpeech(); // Esc key for emergency speech stop
+  }
+});
+</script>
+</body>
+</html>

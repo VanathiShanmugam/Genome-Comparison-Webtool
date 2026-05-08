@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Genome Comparison Tool with Voice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    /* ... existing style kept same ... */
+
+    :root {
+      --bg-color: #0A0F1D;
+      --text-color: #ffffff;
+      --accent-color: #5ab2c1;
+      --textarea-bg: #1b243b;
+      --preview-color: #a0dbe5;
+      --output-bg: #1b243b;
+      --base-font-size: 16px;
+      --error-color: #ff6b6b;
+      --valid-color: #81c784;
+    }
+
+    body.high-contrast {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --accent-color: #003366;
+      --textarea-bg: #e6f0ff;
+      --preview-color: #003366;
+      --output-bg: #ddeeff;
+      --error-color: #cc0000;
+      --valid-color: #006600;
+    }
+
+    html {
+      font-size: var(--base-font-size);
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      text-align: center;
+      overflow-x: hidden;
+      transition: background 0.3s, color 0.3s, font-size 0.3s;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1, h2 {
+      color: var(--accent-color);
+      font-size: 2em;
+    }
+
+    .btn-group {
+      margin: 10px 0;
+    }
+
+    .btn-group button {
+      margin: 0 5px;
+    }
+
+    .input-section {
+      margin: 20px 0;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1em;
+    }
+
+    textarea {
+      width: 300px;
+      height: 120px;
+      margin-top: 10px;
+      font-size: 1em;
+      padding: 8px;
+      border: 2px solid var(--accent-color);
+      border-radius: 5px;
+      background-color: var(--textarea-bg);
+      color: var(--text-color);
+    }
+
+    textarea:focus {
+      background-color: #fff !important;
+      color: #000 !important;
+      outline: 3px solid var(--accent-color);
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: var(--accent-color);
+      border: none;
+      border-radius: 5px;
+      color: #ffffff;
+      margin: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.02);
+    }
+
+    #alignment, #report {
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 1em;
+      margin: 20px 0;
+      background-color: var(--output-bg);
+      color: var(--text-color);
+      padding: 15px;
+      border-radius: 8px;
+      opacity: 0;
+      overflow-x: auto;
+      max-width: 100%;
+      word-break: break-word;
+    }
+
+    .file-upload-section {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    input[type="file"] {
+      margin-top: 10px;
+      background-color: var(--textarea-bg);
+      color: var(--text-color);
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+
+    .preview-area {
+      display: flex;
+      justify-content: space-around;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 0.9em;
+      font-style: italic;
+      color: var(--preview-color);
+    }
+
+    .mutation {
+      color: red;
+      font-weight: bold;
+    }
+
+    .toggle-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .speech-control {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .speech-indicator {
+      display: none;
+      margin-top: 10px;
+      color: var(--accent-color);
+    }
+
+    .speaking {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    .error {
+      color: var(--error-color);
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+
+    .valid {
+      color: var(--valid-color);
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+
+    .download-links {
+      margin-top: 20px;
+    }
+
+    .download-links button {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      textarea {
+        width: 90%;
+      }
+
+      .input-section {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1><i class="fas fa-dna"></i>Genome Comparison Tool </h1>
+
+  <div class="toggle-group">
+    <button onclick="toggleHighContrast()">Toggle High Contrast</button>
+    <button onclick="changeFontSize(2)">A+</button>
+    <button onclick="changeFontSize(-2)">A−</button>
+    <button onclick="resetFontSize()">Undo</button>
+  </div>
+
+    <p>Enter two DNA sequences to compare:</p>
+
+    <section class="input-section">
+      <label for="sequence1">
+        First DNA sequence
+        <textarea id="sequence1" placeholder="Enter first DNA sequence here" oninput="validateSequence(this, 'error1')"></textarea>
+        <div id="error1" class="error"></div>
+      </label>
+      <label for="sequence2">
+        Second DNA sequence
+        <textarea id="sequence2" placeholder="Enter second DNA sequence here" oninput="validateSequence(this, 'error2')"></textarea>
+        <div id="error2" class="error"></div>
+      </label>
+    </section>
+
+    <p>Or upload DNA sequence files:</p>
+    <section class="file-upload-section">
+      <label for="fileInput1">
+        Upload first DNA file
+        <input type="file" id="fileInput1" accept=".txt,.fasta,.fa">
+      </label>
+      <label for="fileInput2">
+        Upload second DNA file
+        <input type="file" id="fileInput2" accept=".txt,.fasta,.fa">
+      </label>
+    </section>
+
+    <div class="preview-area">
+      <div id="preview1"></div>
+      <div id="preview2"></div>
+    </div>
+
+    <button id="loadBtn">Load Sequences</button>
+    <button id="compareBtn">Compare Sequences</button>
+
+    <h2>Alignment and Mutation Report</h2>
+    <div id="result">
+      <div id="alignment"></div>
+      <div id="report"></div>
+    </div>
+
+    <div class="speech-control">
+      <button onclick="speakReport()">
+        <i class="fas fa-volume-up"></i> Speak Report
+      </button>
+      <button onclick="stopAllSpeech()">
+        <i class="fas fa-stop-circle"></i> Stop Speech
+      </button>
+    </div>
+
+    <div class="download-links">
+      <button onclick="downloadText('alignment')"><i class="fas fa-download"></i> Download Alignment</button>
+      <button onclick="downloadText('report')"><i class="fas fa-download"></i> Download Report</button>
+    </div>
+
+    <div id="alignmentSpeaking" class="speech-indicator">
+      <i class="fas fa-volume-up speaking"></i> Speaking alignment...
+    </div>
+    <div id="reportSpeaking" class="speech-indicator">
+      <i class="fas fa-volume-up speaking"></i> Speaking report...
+    </div>
+  </main>
+
+  <script>
+    function cleanSequence(seq) {
+      return seq.toUpperCase().replace(/\s+/g, '');
+    }
+
+    function isValidDNA(seq) {
+      return /^[ATGC]+$/.test(seq);
+    }
+
+    function validateSequence(textarea, errorId) {
+      const seq = cleanSequence(textarea.value);
+      const error = document.getElementById(errorId);
+      if (!seq) {
+        error.innerHTML = '';
+        return false;
+      }
+      if (!isValidDNA(seq)) {
+        const invalid = [...new Set(seq.split('').filter(c => !"ATGC".includes(c)))];
+        error.innerHTML = `Invalid characters: ${invalid.join(', ')}`;
+        return false;
+      }
+      error.innerHTML = `<span class="valid">Valid DNA sequence</span>`;
+      return true;
+    }
+
+    function compareSequences() {
+      const s1 = cleanSequence(document.getElementById('sequence1').value);
+      const s2 = cleanSequence(document.getElementById('sequence2').value);
+      const aDiv = document.getElementById('alignment');
+      const rDiv = document.getElementById('report');
+
+      if (!s1 || !s2) return alert("Enter both DNA sequences.");
+      if (!isValidDNA(s1) || !isValidDNA(s2)) return alert("Invalid characters in input.");
+
+      let a1 = '', a2 = '', mutations = [];
+      for (let i = 0; i < Math.min(s1.length, s2.length); i++) {
+        if (s1[i] !== s2[i]) {
+          a1 += `<span class="mutation">${s1[i]}</span>`;
+          a2 += `<span class="mutation">${s2[i]}</span>`;
+          mutations.push(`Position ${i+1}: ${s1[i]} → ${s2[i]}`);
+        } else {
+          a1 += s1[i]; a2 += s2[i];
+        }
+      }
+      aDiv.innerHTML = `Alignment:<br>${a1}<br>${a2}`;
+      aDiv.style.opacity = 1;
+      rDiv.innerHTML = mutations.length ? mutations.join('<br>') : 'No mutations found.';
+      rDiv.style.opacity = 1;
+    }
+
+    function readFile(input, textareaId, previewId) {
+      const file = input.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          let content = e.target.result;
+          if (content.startsWith(">")) content = content.split("\n").slice(1).join("");
+          const clean = cleanSequence(content);
+          document.getElementById(textareaId).value = clean;
+          document.getElementById(previewId).innerText = `Preview: ${clean.slice(0,100)}... (${clean.length} characters)`;
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    function loadSequences() {
+      readFile(document.getElementById('fileInput1'), 'sequence1', 'preview1');
+      readFile(document.getElementById('fileInput2'), 'sequence2', 'preview2');
+    }
+
+    function toggleHighContrast() {
+      document.body.classList.toggle("high-contrast");
+    }
+
+    let currentFontSize = 16;
+    function changeFontSize(val) {
+      currentFontSize += val;
+      document.documentElement.style.setProperty('--base-font-size', `${currentFontSize}px`);
+    }
+
+    function resetFontSize() {
+      currentFontSize = 16;
+      document.documentElement.style.setProperty('--base-font-size', `16px`);
+    }
+
+    function speakAlignment() {
+      const text = document.getElementById('alignment').innerText;
+      if (!text) return alert("No alignment to speak.");
+      const alignmentUtterance = new SpeechSynthesisUtterance(text);
+      alignmentUtterance.onstart = () => document.getElementById('alignmentSpeaking').style.display = "block";
+      alignmentUtterance.onend = () => document.getElementById('alignmentSpeaking').style.display = "none";
+      speechSynthesis.speak(alignmentUtterance);
+    }
+
+    function speakReport() {
+      const text = document.getElementById('report').innerText;
+      if (!text) return alert("No report to speak.");
+      const reportUtterance = new SpeechSynthesisUtterance(text);
+      reportUtterance.onstart = () => document.getElementById('reportSpeaking').style.display = "block";
+      reportUtterance.onend = () => document.getElementById('reportSpeaking').style.display = "none";
+      speechSynthesis.speak(reportUtterance);
+    }
+
+    function stopAllSpeech() {
+      speechSynthesis.cancel();
+      document.querySelectorAll(".speech-indicator").forEach(e => e.style.display = "none");
+    }
+
+    function downloadText(id) {
+      const content = document.getElementById(id).innerText;
+      if (!content || document.getElementById(id).style.opacity === "0") {
+        alert(`No ${id} available to download.`);
+        return;
+      }
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${id}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+     document.getElementById("compareBtn").addEventListener("click", compareSequences);
+    document.getElementById("loadBtn").addEventListener("click", loadSequences);
+    window.addEventListener("beforeunload", stopAllSpeech);
+
+    // ✅ Keyboard shortcuts
+    document.addEventListener("keydown", function (e) {
+      const isEditing = document.activeElement.tagName === "TEXTAREA";
+      if (isEditing) return;
+
+    if (e.altKey && e.shiftKey) {
+    switch (e.code) {
+      case "KeyL": loadSequences(); break;
+      case "KeyM": compareSequences(); break;
+      case "KeyS": speakReport(); break;
+      case "KeyD": downloadText("report"); break;
+      case "KeyQ": downloadText("alignment"); break;
+      case "KeyH": toggleHighContrast(); break;
+      case "KeyZ": resetFontSize(); break;
+      case "Equal": changeFontSize(2); break; // "+" or "=" key
+      case "Minus": changeFontSize(-2); break;
+      case "Digit1": document.getElementById('fileInput1').click(); break;
+      case "Digit2": document.getElementById('fileInput2').click(); break;
+    }
+  }
+
+  if (e.key === "Escape") stopAllSpeech();
+});
+
+  </script>
+</body>
+</html>
